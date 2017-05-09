@@ -6,8 +6,12 @@
 #include <sys/types.h>
 #include <string.h>
 #include <unistd.h>
+#include <semaphore.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #define SHMSZ 1024
+#define SEM_PATH "/tmp"
 
 
 int main(int argc, char* argv[]){
@@ -26,10 +30,7 @@ int main(int argc, char* argv[]){
     int shmid;
     key_t key;
     char *shm, *s;
-    
-    current_time = time(0);
-    strftime (time_now, 30, "%m-%d %H:%M:%S", localtime (&current_time));
-    
+    sem_t *sem1;   
     
     key = 5678;
 
@@ -44,15 +45,22 @@ int main(int argc, char* argv[]){
 
     user_data = (char*) malloc (sizeof(char)*30);
     
-    s = shm;
+    sem1 = sem_open(SEM_PATH, O_CREAT, S_IRUSR | S_IWUSR, 1);
+
+    while(1){
+    //data i czas
+    current_time = time(0);
+    strftime (time_now, 30, "%m-%d %H:%M:%S", localtime (&current_time));
+    //----------------
+    
     printf("%s: ", argv[1]);
-    scanf("%30s", user_data);
+    //scanf("%30s", user_data);
+    fgets(user_data, 29, stdin );
     sprintf(shm, "%s (%s) \n > %s",argv[1], time_now, user_data );
-
+    sem_post(sem1);
+    }
      
-    while (*shm != '*')
-        sleep(1);
-
+    
     exit(0);
 
 

@@ -3,10 +3,13 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/types.h>
-
+#include <unistd.h>
+#include <semaphore.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #define SHMSZ     27
-
+#define SEM_PATH "/tmp"
 
 int main(){
 
@@ -14,7 +17,7 @@ int main(){
 int shmid;
     key_t key;
     char *shm, *s;
-
+    sem_t *sem1;
     key = 5678;
     if ((shmid = shmget(key, SHMSZ, 0666)) < 0) {
         perror("shmget");
@@ -26,10 +29,14 @@ int shmid;
         exit(1);
     }
 
-    for (s = shm; *s != NULL; s++)
-        putchar(*s);
-    putchar('\n');
-    
+    sem1 = sem_open(SEM_PATH, O_CREAT, S_IRUSR | S_IWUSR, 1);
+
+    while(1){
+        sem_wait(sem1);
+        printf("%s", shm);
+        putchar('\n');
+        
+    }
   
     *shm = '*';
 
