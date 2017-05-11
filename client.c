@@ -23,7 +23,7 @@ int main(int argc, char* argv[]){
     }
 
     time_t current_time;
-    char data[] = "loerm ipsum bla";
+    
     char *user_data;
     char time_now[30];
     char c;

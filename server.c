@@ -19,7 +19,7 @@ int shmid;
     char *shm, *s;
     sem_t *sem1;
     key = 5678;
-    if ((shmid = shmget(key, SHMSZ, 0666)) < 0) {
+    if ((shmid = shmget(key, SHMSZ, IPC_CREAT | 0666)) < 0) {
         perror("shmget");
         exit(1);
     }
