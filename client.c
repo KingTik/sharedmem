@@ -54,7 +54,6 @@ int main(int argc, char* argv[]){
     //----------------
     
     printf("%s: ", argv[1]);
-    //scanf("%30s", user_data);
     fgets(user_data, 29, stdin );
     sprintf(shm, "%s (%s) \n > %s",argv[1], time_now, user_data );
     sem_post(sem1);
