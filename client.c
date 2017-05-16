@@ -12,7 +12,53 @@
 
 #define SHMSZ 1024
 #define SEM_PATH "/tmp"
+sem_t *sem1;  
+char *shm;
+char *shm_rd;
 
+
+void *producent(void *arg){
+
+    time_t current_time;
+    char time_now[30];
+    char *user_data;
+    user_data = (char*) malloc (sizeof(char)*30);
+
+    while(1){
+    //data i czas
+    
+        current_time = time(0);
+        
+        strftime (time_now, 30, "%m-%d %H:%M:%S", localtime (&current_time));
+        
+        //----------------
+        
+        printf("%s: ", (char *) arg);
+        fgets(user_data, 29, stdin );
+        sprintf(shm, "%s (%s) \n > %.30s",(char *) arg, time_now, user_data );
+        sem_post(sem1);
+    }
+
+
+
+}
+
+void *konsument(void *arg){
+    char buff[90];
+    while(1){
+       
+        
+         if(strncmp(buff, shm, sizeof(buff)) || !strncmp(buff, arg, sizeof(arg)) ){
+            strncpy(buff, shm, sizeof(buff));
+            printf("\r%s", buff);
+            putchar('\n');
+            
+            if(!strncmp(buff, arg, sizeof(arg)))
+            printf("\r%s", arg);
+         }
+    }
+
+}
 
 int main(int argc, char* argv[]){
 
@@ -22,15 +68,10 @@ int main(int argc, char* argv[]){
         exit(-1);
     }
 
-    time_t current_time;
-    char data[] = "loerm ipsum bla";
-    char *user_data;
-    char time_now[30];
-    char c;
-    int shmid;
+
+    int shmid, i;
     key_t key;
-    char *shm, *s;
-    sem_t *sem1;   
+    pthread_t tid[2];
     
     key = 5678;
 
@@ -43,23 +84,20 @@ int main(int argc, char* argv[]){
         exit(1);
     }
 
-    user_data = (char*) malloc (sizeof(char)*30);
-    
-    sem1 = sem_open(SEM_PATH, O_CREAT, S_IRUSR | S_IWUSR, 1);
-
-    while(1){
-    //data i czas
-    current_time = time(0);
-    strftime (time_now, 30, "%m-%d %H:%M:%S", localtime (&current_time));
-    //----------------
-    
-    printf("%s: ", argv[1]);
-    //scanf("%30s", user_data);
-    fgets(user_data, 29, stdin );
-    sprintf(shm, "%s (%s) \n > %s",argv[1], time_now, user_data );
-    sem_post(sem1);
+    if ((shm_rd = shmat(shmid, NULL, SHM_RDONLY)) == (char *) -1) {
+        perror("shmat");
+        exit(1);
     }
-     
+    
+    sem1 = sem_open(SEM_PATH, O_CREAT, S_IRUSR | S_IWUSR, 0);
+
+    
+    pthread_create( &tid[0], NULL, producent, (void *)argv[1]); 
+    pthread_create( &tid[1], NULL, konsument, (void *)argv[1]); 
+    
+     for (i=0; i<2; i++){
+         pthread_join(tid[i], NULL);
+     }
     
     exit(0);
 

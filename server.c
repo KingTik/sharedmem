@@ -8,23 +8,24 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#define SHMSZ     27
+#define SHMSZ     1024
 #define SEM_PATH "/tmp"
 
 int main(){
 
 
-int shmid;
-    key_t key;
-    char *shm, *s;
+    int shmid_rd, shmid_wr;
+    key_t key_in, key_out;
+    char *shm_rd, *s, *shm_wr;
     sem_t *sem1;
-    key = 5678;
-    if ((shmid = shmget(key, SHMSZ, 0666)) < 0) {
+    key_in = 5678;
+
+    if ((shmid_rd = shmget(key_in, SHMSZ, IPC_CREAT | 0666)) < 0) {
         perror("shmget");
         exit(1);
     }
 
-    if ((shm = shmat(shmid, NULL, 0)) == (char *) -1) {
+    if ((shm_rd = shmat(shmid_rd, NULL, SHM_RDONLY)) == (char *) -1) {
         perror("shmat");
         exit(1);
     }
@@ -33,12 +34,13 @@ int shmid;
 
     while(1){
         sem_wait(sem1);
-        printf("%s", shm);
+        sleep(5);
+        printf("%s", shm_rd);
         putchar('\n');
         
     }
   
-    *shm = '*';
+    
 
     exit(0);
 
