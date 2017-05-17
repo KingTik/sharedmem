@@ -10,9 +10,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#define SHMSZ 2048
+
 #define SEM_PATH "/msg"
-#define SEM_PATH_LIST "/queue"
 #define USER_MESSAGE_LENGTH 60
 
 
@@ -29,7 +28,7 @@ struct Message{
 
 struct Message *shm;
 
-sem_t  *sem_q; //semafor do osobnego watku 
+
 
 void* display(void *arg){
     key_t key = 8769;
@@ -93,7 +92,7 @@ int main(int argc, char* argv[]){
     
    
     sem_msg = sem_open(SEM_PATH, O_CREAT, S_IRUSR | S_IWUSR, 0);
-    sem_q = sem_open(SEM_PATH_LIST, O_CREAT, S_IRUSR | S_IWUSR, 1);
+    
     
     pthread_create(&tid, NULL, display, NULL);
     current_time = time(0);
@@ -106,10 +105,12 @@ int main(int argc, char* argv[]){
         strftime (wiadomosc->current_time, 17, "%m-%d %H:%M:%S", localtime (&current_time));
         strncpy(wiadomosc->username, argv[1], 20);
         
+        
+
         sem_post(sem_msg);
 
         while(wiadomosc->recieved != 1){
-            
+            //czekanie na potwiedzenie dotarcia wiadomosci
         }
 
         

@@ -12,9 +12,8 @@
 
 
 
-#define SHMSZ 2048
+
 #define SEM_PATH_MSG "/msg"
-#define SEM_PATH_LIST "/queue"
 #define USER_MESSAGE_LENGTH 60
 #define QUEUE_SIZE 10
 
@@ -26,14 +25,16 @@ struct Message{
     unsigned int message_id;
 }Message;
 
-unsigned int message_id_cnt =1;
+unsigned int message_id_cnt =1; //id wiadomosci 
 
+//dodanie nowego elementu na poczatek tablicy i przesuniecie wszystkich pozostalych o jeden dalej
 void queue_add(struct Message *wiad, struct Message *queue){
 
     int i;
-    for(i = QUEUE_SIZE-1; i>0; i--){
+    for(i = QUEUE_SIZE-1; i>0; i--){ //przesuniecie elementow
         queue[i]= queue[i-1];
     }
+    //wstawienie nowego na poczatek tablicy
     strncpy(queue[0].username,wiad->username, sizeof(queue[0].username) );
     strncpy(queue[0].current_time,wiad->current_time, sizeof(queue[0].current_time) );
     strncpy(queue[0].message,wiad->message, sizeof(queue[0].message) );
@@ -50,7 +51,7 @@ int main(){
     int shmid, shmid2, shmid_wr, i;
     key_t key_in, key_out;
     char *shm_rd, *s, *shm_wr;
-    sem_t *sem_msg, *sem_q;
+    sem_t *sem_msg;
     key_in = 5678;
     key_out = 8769;
     struct stat st = {0};
@@ -58,9 +59,8 @@ int main(){
     struct Message *queue;
     
     
-    //queue = (struct Message*) malloc (sizeof(struct Message)*QUEUE_SIZE);
 
-    //pamiec wspoldzielona dla wiadomosci
+    //pamiec wspoldzielona dla wiadomosci przychodzacej
     if ((shmid = shmget(key_in, sizeof(struct Message), IPC_CREAT | 0666)) < 0) {
         perror("shmget");
         exit(1);
@@ -70,7 +70,7 @@ int main(){
         exit(1);
     }
 
-        //pamiec wspoldzielona dla wiadomosci
+        //pamiec wspoldzielona dla wiadomosci wychodzacych
     if ((shmid2 = shmget(key_out, sizeof(struct Message)*QUEUE_SIZE, IPC_CREAT | 0666)) < 0) {
         perror("shmget_out");
         exit(1);
@@ -84,16 +84,17 @@ int main(){
     //semafor dla wiadomosci wychodzacej
     sem_msg = sem_open(SEM_PATH_MSG, O_CREAT, S_IRUSR | S_IWUSR, 1);
 
-    //semafor dla wiadomosci przychodzacych
-    sem_q = sem_open(SEM_PATH_LIST, O_CREAT, S_IRUSR | S_IWUSR, 1);
+    
+    
 
     while(1){
+
         sem_wait(sem_msg);
         queue_add(shm, queue);
         shm->recieved = 1; //odebrano
 
 
-        sem_post(sem_q);
+        
         system("clear");
 
         //wyswietlanie
