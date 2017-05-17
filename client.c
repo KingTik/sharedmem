@@ -10,55 +10,24 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#define SHMSZ 1024
+#define SHMSZ 2048
 #define SEM_PATH "/tmp"
+#define USER_MESSAGE_LENGTH 60
+
 sem_t *sem1;  
-char *shm;
+
 char *shm_rd;
 
+struct Message{
+    char current_time[17];  //czas nadania wiadomosci
+    char username[20];      // nazwa uzytkownika
+    char message[USER_MESSAGE_LENGTH]; //wiadomosc
+    short int recieved;     //informacja czy wiadomosc zostala odebrana 0-nie 1-tak
+}Message;
 
-void *producent(void *arg){
-
-    time_t current_time;
-    char time_now[30];
-    char *user_data;
-    user_data = (char*) malloc (sizeof(char)*30);
-
-    while(1){
-    //data i czas
-    
-        current_time = time(0);
-        
-        strftime (time_now, 30, "%m-%d %H:%M:%S", localtime (&current_time));
-        
-        //----------------
-        
-        printf("%s: ", (char *) arg);
-        fgets(user_data, 29, stdin );
-        sprintf(shm, "%s (%s) \n > %.30s",(char *) arg, time_now, user_data );
-        sem_post(sem1);
-    }
+struct Message *shm;
 
 
-
-}
-
-void *konsument(void *arg){
-    char buff[90];
-    while(1){
-       
-        
-         if(strncmp(buff, shm, sizeof(buff)) || !strncmp(buff, arg, sizeof(arg)) ){
-            strncpy(buff, shm, sizeof(buff));
-            printf("\r%s", buff);
-            putchar('\n');
-            
-            if(!strncmp(buff, arg, sizeof(arg)))
-            printf("\r%s", arg);
-         }
-    }
-
-}
 
 int main(int argc, char* argv[]){
 
@@ -71,33 +40,45 @@ int main(int argc, char* argv[]){
 
     int shmid, i;
     key_t key;
-    pthread_t tid[2];
+    time_t current_time;
+    char time_now[14];
+    struct Message *wiadomosc;
+    
     
     key = 5678;
 
-    if ((shmid = shmget(key, SHMSZ, IPC_CREAT | 0666)) < 0) {
+    if ((shmid = shmget(key, sizeof(struct Message), IPC_CREAT | 0666)) < 0) {
         perror("shmget");
         exit(1);
     }
-    if ((shm = shmat(shmid, NULL, 0)) == (char *) -1) {
+    if ((wiadomosc = (struct Message *) shmat(shmid, NULL, 0)) == (struct Message *) -1) {
         perror("shmat");
         exit(1);
     }
 
-    if ((shm_rd = shmat(shmid, NULL, SHM_RDONLY)) == (char *) -1) {
-        perror("shmat");
-        exit(1);
-    }
-    
+   
     sem1 = sem_open(SEM_PATH, O_CREAT, S_IRUSR | S_IWUSR, 0);
 
     
-    pthread_create( &tid[0], NULL, producent, (void *)argv[1]); 
-    pthread_create( &tid[1], NULL, konsument, (void *)argv[1]); 
     
-     for (i=0; i<2; i++){
-         pthread_join(tid[i], NULL);
-     }
+
+    while (1){
+
+        wiadomosc->recieved = 0;
+        fgets(wiadomosc->message,USER_MESSAGE_LENGTH, stdin );
+        strftime (wiadomosc->current_time, 17, "%m-%d %H:%M:%S", localtime (&current_time));
+        strncpy(wiadomosc->username, argv[1], 20);
+        //shm = wiadomosc;
+        sem_post(sem1);
+
+        while(wiadomosc->recieved != 1){
+            
+        }
+
+        
+    }
+    
+     
     
     exit(0);
 
