@@ -19,7 +19,7 @@
 
 struct Message{
     char current_time[17];
-    char username[20];
+    char username[15];
     char message[USER_MESSAGE_LENGTH];
     short int recieved;
     unsigned int message_id;
@@ -52,7 +52,7 @@ int main(){
     key_t key_in, key_out;
     char *shm_rd, *s, *shm_wr;
     sem_t *sem_msg;
-    key_in = 5678;
+    key_in = 5278;
     key_out = 8769;
     struct stat st = {0};
     struct Message *shm;
